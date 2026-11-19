@@ -68,6 +68,18 @@ jobs:
             "installer/Warped-Vinyl-HiFi-macOS.pkg"
           ls -la installer
 
+      - name: Verify installer on the runner (install + Apple auval)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -e
+          pkgutil --payload-files installer/*.pkg
+          sudo installer -pkg installer/*.pkg -target /
+          ls -la /Library/Audio/Plug-Ins/VST3 /Library/Audio/Plug-Ins/Components
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          auval -a | grep -i Rcna || true
+          auval -strict -v aufx Wvhf Rcna
+
       - name: Upload macOS installer
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4

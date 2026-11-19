@@ -8,7 +8,7 @@ juce_add_plugin(WarpedVinylHiFi
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
-    AU_MAIN_TYPE kAudioUnitType_MusicEffect
+    AU_MAIN_TYPE kAudioUnitType_Effect
     VST3_CATEGORIES Fx Modulation
     COPY_PLUGIN_AFTER_BUILD FALSE)
 

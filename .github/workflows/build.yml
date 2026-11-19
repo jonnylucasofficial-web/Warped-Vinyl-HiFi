@@ -45,6 +45,33 @@ jobs:
           T=$(find build -type f \( -name dsp_tests -o -name dsp_tests.exe \) | head -1)
           "$T"
 
+      - name: Build macOS installer (.pkg)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -e
+          ROOT="$RUNNER_TEMP/pkgroot"
+          mkdir -p "$ROOT/Library/Audio/Plug-Ins/VST3" "$ROOT/Library/Audio/Plug-Ins/Components"
+          cp -R build/*/*_artefacts/Release/VST3/*.vst3 "$ROOT/Library/Audio/Plug-Ins/VST3/"
+          cp -R build/*/*_artefacts/Release/AU/*.component "$ROOT/Library/Audio/Plug-Ins/Components/"
+          # ad-hoc sign the bundles so Apple Silicon hosts will load them
+          for b in "$ROOT"/Library/Audio/Plug-Ins/*/*; do codesign --force --deep --sign - "$b"; done
+          # install exactly where we say (don't let Installer relocate the bundles)
+          pkgbuild --analyze --root "$ROOT" "$RUNNER_TEMP/comp.plist"
+          i=0; while /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "$RUNNER_TEMP/comp.plist" 2>/dev/null; do i=$((i+1)); done
+          mkdir -p installer
+          pkgbuild --root "$ROOT" --component-plist "$RUNNER_TEMP/comp.plist" \
+            --identifier "com.roundcorneraudio.warpedvinylhifi" --version "1.0.0" --install-location / \
+            "installer/Warped-Vinyl-HiFi-macOS.pkg"
+          ls -la installer
+
+      - name: Upload macOS installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarpedVinylHiFi-macOS-Installer
+          path: installer
+
       - name: Collect
         shell: bash
         run: |

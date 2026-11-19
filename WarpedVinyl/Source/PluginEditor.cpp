@@ -115,7 +115,7 @@ void WarpedVinylEditor::timerCallback()
 
     const bool div368 = proc.apvts.getRawParameterValue ("dipTapDiv")->load() > 0.5f;
     static juce::String last;
-    juce::String s = juce::String (proc.currentRateHz.load(), 2) + " Hz  |  ramp " +
+    juce::String s = juce::String (on ? "" : "BYPASSED - click the BYPASS footswitch to engage  |  ") + juce::String (proc.currentRateHz.load(), 2) + " Hz  |  ramp " +
                      juce::String (juce::roundToInt (proc.rampPosition.load() * 100)) + "%"
                      + (proc.tapOverridesRpm.load() ? "  |  RPM set by TAP" : "")
                      + (proc.tapOverridesRamp.load() ? "  |  RAMP set by TAP" : "")

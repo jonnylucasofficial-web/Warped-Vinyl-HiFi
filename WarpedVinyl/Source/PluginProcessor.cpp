@@ -55,7 +55,7 @@ APVTS::ParameterLayout WarpedVinylProcessor::createLayout()
     const juce::StringArray shapes { "Smooth", "Linear", "Expo" };
     l.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { wvids::rise, 1 }, "Rise Shape", shapes, 1));
     l.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { wvids::fall, 1 }, "Fall Shape", shapes, 1));
-    l.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { wvids::on, 1 }, "Bypass (On)", false));
+    l.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { wvids::on, 1 }, "Effect On", true));
     knob (wvids::exp, "Expression", 0.0f);
     l.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { wvids::expConnected, 1 }, "Expression Connected", false));
     l.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { wvids::hostSync, 1 }, "Sync Tap to Host Tempo", false));

@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -71,6 +74,18 @@ jobs:
         with:
           name: WarpedVinylHiFi-macOS-Installer
           path: installer
+
+      - name: Publish .pkg as a GitHub Release (direct download)
+        if: runner.os == 'macOS' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest macOS installer
+          body: |
+            Download the .pkg below, double-click it, then allow it in System Settings > Privacy & Security > Open Anyway.
+            Installs the AU and VST3 into /Library/Audio/Plug-Ins. Built from ${{ github.sha }}.
+          make_latest: true
+          files: installer/*.pkg
 
       - name: Collect
         shell: bash

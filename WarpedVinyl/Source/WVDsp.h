@@ -117,25 +117,35 @@ public:
     void prepare (float sampleRate, int numChannels)
     {
         fs = sampleRate;
-        const int maxSamples = (int) (0.040f * fs) + 16;
+        const int maxSamples = (int) (0.060f * fs) + 16;
         chans.resize ((size_t) std::max (1, numChannels));
         for (auto& c : chans) c.prepare (fs, maxSamples);
         baseSm.setLength (0.08f, fs); depthSm.setLength (0.05f, fs);
         mixSm.setLength (0.03f, fs); bypassSm.setLength (0.012f, fs);
         baseSm.reset (lagToMs (p.lag) * 0.001f * fs);
-        depthSm.reset (depthToMs (p.depth) * 0.001f * fs);
+        depthSm.reset (depthToMs (p.depth, p.rateHz) * 0.001f * fs);
         mixSm.reset (p.mix); bypassSm.reset (p.on ? 1.0f : 0.0f);
         lastTone = -1.0f;
     }
 
     static float lagToMs (float lag)     { return 5.0f + 15.0f * clamp01 (lag); }        // 5–20 ms
-    static float depthToMs (float depth) { return 6.0f * std::pow (clamp01 (depth), 1.6f); }
+    // DEPTH sets the pitch swing (not a fixed delay sweep), so the warble stays
+    // audible at slow RPM: ~15 cents p-p at 1/4, ~60 at noon, ~250 (> 2 semitones) at max.
+    // Sweep width is capped at 25 ms (BBD range), which tames only the slowest settings.
+    static float depthToMs (float depth, float rateHz)
+    {
+        const float d = clamp01 (depth);
+        const float centsPP = 250.0f * d * d;
+        const float slope = centsPP / 3462.0f;                    // peak delay slope (s/s)
+        const float sweepSec = slope / (2.0f * std::max (0.05f, rateHz));
+        return std::min (25.0f, 1000.0f * sweepSec);
+    }
 
     void setParams (const Params& np)
     {
         p = np;
         baseSm.set (lagToMs (p.lag) * 0.001f * fs);
-        depthSm.set (depthToMs (p.depth) * 0.001f * fs);
+        depthSm.set (depthToMs (p.depth, p.rateHz) * 0.001f * fs);
         mixSm.set (clamp01 (p.mix));
         bypassSm.set (p.on ? 1.0f : 0.0f);
         lfo.warp = p.warp; lfo.rise = p.rise; lfo.fall = p.fall;

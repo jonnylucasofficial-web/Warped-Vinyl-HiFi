@@ -5,15 +5,51 @@ using APVTS = juce::AudioProcessorValueTreeState;
 
 namespace
 {
-struct Factory { const char* name; float tone, lag, mix, rpm, depth, warp; int rise, fall; };
+// Factory presets. Shapes: 0 Smooth, 1 Linear, 2 Expo. Tap div toggle: 0/1/2 = 1/2/4.
+// ramp = which knobs ramp (bits: 1 Lag, 2 Mix, 4 RPM, 8 Depth, 16 Warp); dirs = rise bits (same order,
+// unset = fall); bounce; sweepTop; rampSpeed knob (0 = 30 s ... 1 = 0.5 s per sweep).
+struct Factory { const char* name; float tone, lag, mix, rpm, depth, warp; int rise, fall, div, ramp, dirs; bool bounce, sweepTop; float rampSpeed; };
 const Factory factory[] = {
-    { "Warped 33",              0.55f, 0.15f, 1.00f, 0.30f, 0.35f, 0.70f, 0, 0 },
-    { "Classic Chorus",         0.65f, 0.25f, 0.50f, 0.35f, 0.45f, 0.50f, 0, 0 },
-    { "Seasick Vibrato",        0.50f, 0.10f, 1.00f, 0.45f, 0.75f, 0.50f, 1, 1 },
-    { "Lush Lag Ensemble",      0.60f, 0.85f, 0.55f, 0.25f, 0.40f, 0.50f, 0, 0 },
-    { "Fast Rotary-ish",        0.70f, 0.05f, 0.70f, 0.78f, 0.30f, 0.50f, 0, 0 },
-    { "Wobbly Tape Wow",        0.45f, 0.30f, 1.00f, 0.15f, 0.55f, 0.20f, 0, 2 },
-    { "Square-ish Pitch Steps", 0.60f, 0.10f, 1.00f, 0.40f, 0.40f, 0.50f, 2, 2 },
+    // --- Chorus ----------------------------------------------------------------------------------------
+    { "Chorus: Classic",                  0.65f, 0.25f, 0.50f, 0.35f, 0.45f, 0.50f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: Subtle Doubler",           0.60f, 0.70f, 0.45f, 0.25f, 0.25f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: Lush Lag Ensemble",        0.60f, 0.85f, 0.55f, 0.30f, 0.40f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: 80s Clean",                0.80f, 0.30f, 0.50f, 0.45f, 0.50f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: Dark & Dreamy",            0.30f, 0.40f, 0.50f, 0.30f, 0.45f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: Fast Shimmer",             0.75f, 0.20f, 0.50f, 0.65f, 0.30f, 0.50f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: Seafoam Wide",             0.60f, 0.60f, 0.55f, 0.40f, 0.60f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Chorus: Detuned Pad",              0.50f, 0.80f, 0.50f, 0.20f, 0.35f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    // --- Vibrato ---------------------------------------------------------------------------------------
+    { "Vibrato: Warped 33",               0.55f, 0.15f, 1.00f, 0.30f, 0.40f, 0.70f, 0, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Warped 45",               0.55f, 0.15f, 1.00f, 0.38f, 0.45f, 0.70f, 0, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Warped 78",               0.55f, 0.15f, 1.00f, 0.48f, 0.50f, 0.70f, 0, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Seasick",                 0.50f, 0.10f, 1.00f, 0.45f, 0.75f, 0.50f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Classic Smooth",          0.60f, 0.10f, 1.00f, 0.62f, 0.45f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Fast Warble",             0.60f, 0.10f, 1.00f, 0.80f, 0.35f, 0.50f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Throb (Vibe-ish)",        0.50f, 0.20f, 0.60f, 0.50f, 0.55f, 0.40f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Saw Up Siren",            0.60f, 0.10f, 1.00f, 0.50f, 0.60f, 0.95f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Saw Down Dive",           0.60f, 0.10f, 1.00f, 0.50f, 0.60f, 0.05f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Vibrato: Square-ish Pitch Steps",  0.60f, 0.10f, 1.00f, 0.40f, 0.40f, 0.50f, 2, 2, 2,  0, 31, false, false, 0.50f },
+    // --- Tape / record wobble ---------------------------------------------------------------------------
+    { "Wobble: Tape Wow",                 0.45f, 0.30f, 1.00f, 0.15f, 0.55f, 0.20f, 0, 2, 2,  0, 31, false, false, 0.50f },
+    { "Wobble: Cassette Flutter",         0.45f, 0.20f, 1.00f, 0.72f, 0.20f, 0.50f, 1, 1, 2,  0, 31, false, false, 0.50f },
+    { "Wobble: Old Record Drift",         0.40f, 0.20f, 1.00f, 0.20f, 0.50f, 0.80f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Wobble: Bent Tape Lo-Fi",          0.30f, 0.50f, 1.00f, 0.25f, 0.60f, 0.15f, 0, 2, 2,  0, 31, false, false, 0.50f },
+    { "Wobble: Warped Off-Center Disc",   0.50f, 0.15f, 1.00f, 0.33f, 0.55f, 0.85f, 2, 0, 2,  0, 31, false, false, 0.50f },
+    // --- Rotary-ish -------------------------------------------------------------------------------------
+    { "Rotary-ish: Fast",                 0.70f, 0.05f, 0.70f, 0.78f, 0.30f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Rotary-ish: Slow",                 0.65f, 0.05f, 0.70f, 0.42f, 0.35f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    // --- Ramping showcases (ramping starts each time you engage the pedal) ------------------------------
+    { "Ramp: Rotor Speeds Up",            0.65f, 0.05f, 0.70f, 0.80f, 0.30f, 0.50f, 0, 0, 2,  4, 31, false, false, 0.45f },
+    { "Ramp: Record Powering Down",       0.50f, 0.10f, 1.00f, 0.55f, 0.55f, 0.50f, 1, 1, 2,  4,  0, false, false, 0.45f },
+    { "Ramp: Depth Swell (Bounce)",       0.55f, 0.15f, 1.00f, 0.50f, 0.70f, 0.50f, 0, 0, 2,  8, 31, true,  false, 0.40f },
+    { "Ramp: Chorus <> Vibrato",          0.60f, 0.20f, 1.00f, 0.45f, 0.50f, 0.50f, 0, 0, 2,  2, 31, true,  false, 0.30f },
+    { "Ramp: Breathing Warp",             0.55f, 0.15f, 1.00f, 0.40f, 0.50f, 1.00f, 1, 1, 2, 16, 31, true,  false, 0.40f },
+    { "Ramp: Lag Sweep Swoosh",           0.65f, 0.90f, 0.50f, 0.30f, 0.20f, 0.50f, 0, 0, 2,  1, 31, true,  false, 0.35f },
+    { "Ramp: Everything Bounces",         0.55f, 0.50f, 0.80f, 0.60f, 0.60f, 0.50f, 0, 0, 2, 31, 21, true,  false, 0.25f },
+    // --- Tap tempo ---------------------------------------------------------------------------------------
+    { "Tap: Quarter-Note Vibrato",        0.60f, 0.10f, 1.00f, 0.50f, 0.45f, 0.50f, 0, 0, 2,  0, 31, false, false, 0.50f },
+    { "Tap: Half-Note Chorus",            0.65f, 0.30f, 0.50f, 0.40f, 0.45f, 0.50f, 0, 0, 1,  0, 31, false, false, 0.50f },
 };
 }
 
@@ -232,6 +268,15 @@ void WarpedVinylProcessor::setCurrentProgram (int i)
     set (wvids::tone, f.tone); set (wvids::lag, f.lag); set (wvids::mix, f.mix); set (wvids::rpm, f.rpm);
     set (wvids::depth, f.depth); set (wvids::warp, f.warp);
     set (wvids::rise, (float) f.rise); set (wvids::fall, (float) f.fall);
+    set (wvids::tapDiv, (float) f.div); set (wvids::rampSpeed, f.rampSpeed);
+    for (int b = 0; b < 5; ++b)
+    {
+        set (wvids::leftDips[b], (f.ramp >> b) & 1 ? 1.0f : 0.0f);    // ramp assignment
+        set (wvids::rightDips[b], (f.dirs >> b) & 1 ? 1.0f : 0.0f);   // rise / fall
+    }
+    set ("dipBounce", f.bounce ? 1.0f : 0.0f);
+    set ("dipSweep", f.sweepTop ? 1.0f : 0.0f);
+    set (wvids::expConnected, 0.0f);    // ramp presets need the expression jack "empty"
 }
 
 void WarpedVinylProcessor::getStateInformation (juce::MemoryBlock& dest)

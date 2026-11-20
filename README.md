@@ -51,6 +51,21 @@ Throughout, the dry path stays clean.
 - 4 preset slots (Program Change 0–3).
 - 7 factory programs.
 
+
+## Factory presets (34)
+
+Pick these from your DAW's preset menu (in Ableton: the device's preset drop-down, or the plugin's Program list).
+Ramp presets start sweeping each time you engage the pedal, so toggle BYPASS to restart them. Tap presets follow the TAP footswitch, or tick *Sync tap to host tempo*.
+
+| Category | Presets |
+|---|---|
+| Chorus | Classic, Subtle Doubler, Lush Lag Ensemble, 80s Clean, Dark & Dreamy, Fast Shimmer, Seafoam Wide, Detuned Pad |
+| Vibrato | Warped 33, Warped 45, Warped 78, Seasick, Classic Smooth, Fast Warble, Throb (Vibe-ish), Saw Up Siren, Saw Down Dive, Square-ish Pitch Steps |
+| Wobble | Tape Wow, Cassette Flutter, Old Record Drift, Bent Tape Lo-Fi, Warped Off-Center Disc |
+| Rotary-ish | Fast, Slow |
+| Ramp | Rotor Speeds Up, Record Powering Down, Depth Swell (Bounce), Chorus <> Vibrato, Breathing Warp, Lag Sweep Swoosh, Everything Bounces |
+| Tap | Quarter-Note Vibrato, Half-Note Chorus |
+
 ---
 ## MIDI
 

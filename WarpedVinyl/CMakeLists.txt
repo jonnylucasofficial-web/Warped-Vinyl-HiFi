@@ -12,6 +12,13 @@ juce_add_plugin(WarpedVinylHiFi
     VST3_CATEGORIES Fx Modulation
     COPY_PLUGIN_AFTER_BUILD FALSE)
 
+execute_process(COMMAND git rev-parse --short HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                OUTPUT_VARIABLE WV_GIT_SHA OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if(NOT WV_GIT_SHA)
+  set(WV_GIT_SHA "local")
+endif()
+target_compile_definitions(WarpedVinylHiFi PRIVATE WV_BUILD_ID="${WV_GIT_SHA}")
+
 target_sources(WarpedVinylHiFi PRIVATE Source/PluginProcessor.cpp Source/PluginEditor.cpp)
 target_compile_definitions(WarpedVinylHiFi PUBLIC JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0
                            JUCE_DISPLAY_SPLASH_SCREEN=0)

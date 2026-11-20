@@ -1,4 +1,7 @@
 #include "PluginEditor.h"
+#ifndef WV_BUILD_ID
+ #define WV_BUILD_ID "dev"
+#endif
 
 namespace
 {
@@ -119,7 +122,7 @@ void WarpedVinylEditor::timerCallback()
                      juce::String (juce::roundToInt (proc.rampPosition.load() * 100)) + "%"
                      + (proc.tapOverridesRpm.load() ? "  |  RPM set by TAP" : "")
                      + (proc.tapOverridesRamp.load() ? "  |  RAMP set by TAP" : "")
-                     + (div368 ? "  |  div 3/6/8" : "  |  div 1/2/4");
+                     + (div368 ? "  |  div 3/6/8" : "  |  div 1/2/4") + "  |  build " WV_BUILD_ID;
     if (s != last) { status.setText (s, juce::dontSendNotification); last = s; }
 
     for (int i = 0; i < 4; ++i)
